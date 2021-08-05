@@ -4,7 +4,7 @@ library(haven)
 
 ## growth curve variables
 dpTargetCAWI <- read.spss(
-    "SC5_pTargetCAWI_D_15-0-0.sav",
+    "SC5_pTargetCAWI_D_12-0-0.sav",
     to.data.frame = T,
     use.value.labels = F
 )
@@ -18,7 +18,7 @@ head(dVS)
 
 ## subgroup variables
 dBasics <- read.spss(
-    "SC5_Basics_D_15-0-0.sav",
+    "SC5_Basics_D_12-0-0.sav",
     to.data.frame = T,
     use.value.labels = F
 )
