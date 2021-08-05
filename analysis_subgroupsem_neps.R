@@ -16,48 +16,78 @@ library(tidyverse)
 # Item: tg53223 I am seriously thinking of completely abandoning the studies: 1 (does not apply at all) - 4 (applies completely)
 
 ## Potentielle Subgruppen-Merkmale
-# Item: t700001	gender	1=m 2=f
-# tx29003   first language German:  1=yes, 2=no
-# tx29060	currently employed:     0=no, 1=yes
-# t242001	used counselling:       1=used, 2=not used
+# Item: 
+# t700001 gender:                 1=m,    2=f
+# tx29003 first language German:  1=yes,  2=no
+# tx29060 currently employed:     0=no,   1=yes
+# t242001 used counselling:       1=used, 2=not used
 # counselling on admission/enrollment
-# tx29062   job position (current)	nominal, 9 levels
+# tx29062 job position (current)  nominal, 9 levels
 
 d <- readRDS("SC5_SubgroupSEM.rds")
-d <- subset(d,
-            subset=wave %in% c(2,4,6,8),
-            select=c(ID_t,wave,
-                     tg53221,tg53222,tg53223,
-                     t70000y, t700001,
-                     t731351_g1, t731301_g1
-                     ))
-names(d) <- c("id", "wave", 
-              "dropout1", "dropout2", "dropout3", 
-              "yearofbirth", "gender", 
-              "education_father", "education_mother")
+d <- subset(
+    d,
+    subset = wave %in% c(2, 4, 6, 8),
+    select = c(
+        ID_t,
+        wave,
+        tg53221,
+        tg53222,
+        tg53223,
+        t70000y,
+        t700001,
+        t731351_g1,
+        t731301_g1
+    )
+)
+
+names(d) <- c(
+    "id",
+    "wave",
+    "dropout1",
+    "dropout2",
+    "dropout3",
+    "yearofbirth",
+    "gender",
+    "education_father",
+    "education_mother"
+)
 
 d <- within(d, {
-  yearofbirth <- as.numeric(yearofbirth)
-  gender <- as.factor(gender)
-  education_father <- as.factor(education_father)
-  education_mother <- as.factor(education_mother)
+    yearofbirth <- as.numeric(yearofbirth)
+    gender <- as.factor(gender)
+    education_father <- as.factor(education_father)
+    education_mother <- as.factor(education_mother)
 })
 summary(d)
 
 ## wide data format
-dwide <- reshape(d,
-                 v.names=c("dropout1", "dropout2", "dropout3"),
-                 timevar="wave",
-                 idvar="id",
-                 direction="wide")
+dwide <- reshape(
+    d,
+    v.names = c("dropout1", "dropout2", "dropout3"),
+    timevar = "wave",
+    idvar = "id",
+    direction = "wide"
+)
 summary(dwide)
 
 ## RIASEC is only measured at wave 1
 d <- readRDS("SC5_SubgroupSEM.rds")
-dinterest <- subset(d,
-                    subset=wave==1,
-                    select=c(ID_t,t66207a_g1, t66207b_g1, t66207c_g1, t66207d_g1, t66207e_g1, t66207f_g1, tg02001))
-    names(dinterest) <- c("id", "R", "I", "A", "S", "E", "C", "qualification")
+dinterest <- subset(
+    d,
+    subset = wave == 1,
+    select = c(
+        ID_t,
+        t66207a_g1,
+        t66207b_g1,
+        t66207c_g1,
+        t66207d_g1,
+        t66207e_g1,
+        t66207f_g1,
+        tg02001
+    )
+)
+names(dinterest) <- c("id", "R", "I", "A", "S", "E", "C", "qualification")
 
 dinterest <- within(dinterest, {
   R <- as.numeric(R)
@@ -173,14 +203,26 @@ MF1 ~~ 0*MF2
 
 
 
-m1 <- sem(model, data=dwide, group="subg", missing="fiml",
-          group.label=c("0","1"))
-m2 <- sem(model2, data=dwide, group="subg", missing="fiml",
-          group.label=c("0","1"))
+m1 <- sem(
+    model,
+    data = dwide,
+    group = "subg",
+    missing = "fiml",
+    group.label = c("0", "1")
+)
+m2 <- sem(
+    model2,
+    data = dwide,
+    group = "subg",
+    missing = "fiml",
+    group.label = c("0", "1")
+)
 summary(m1)
 summary(m2)
-fitmeasures(m1)[c("rmsea", "cfi", "tli", "srmr", "chisq", "df", "pvalue")] %>% round(3)
-fitmeasures(m2)[c("rmsea", "cfi", "tli", "srmr", "chisq", "df", "pvalue")] %>% round(3)
+fitmeasures(m1)[c("rmsea", "cfi", "tli", "srmr", "chisq", "df", "pvalue")] %>% 
+    round(3)
+fitmeasures(m2)[c("rmsea", "cfi", "tli", "srmr", "chisq", "df", "pvalue")] %>% 
+    round(3)
 
 con = '
 m11==m12
@@ -207,7 +249,8 @@ columns <- c("yearofbirth", "gender",
 C <- matrix(c(0.25, 0.25, 0.25, 0.25,
               -1.0, 0.00, 0.00, 1.00,
               -3.0, 1.00, 1.00, 1.00,
-              0.00, -1.00, 1.00, 0.00), ncol = 4, byrow = T)
+              0.00, -1.00, 1.00, 0.00), 
+            ncol = 4, byrow = T)
 
 solve(C) %>% t() 
 
