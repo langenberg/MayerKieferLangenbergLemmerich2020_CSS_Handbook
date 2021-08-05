@@ -1,30 +1,29 @@
 #### This is the analysis script for the book chapter in the latest version ######
-## Wir br?uchten also die study success and satisfaction Indikatoren f?r die Verl?ufe 
-## und eine Liste von Variablen f?r die wir Subgruppen finden wollen.
+## We need the indicators for study success and satisfaction for the growth curves
+## and a list of variables for the subgroups.
 
 library(subgroupsem)
 library(lavaan)
 library(tidyverse)
 
-## Variablen
-# ID_t	Personen_ID
-# wave	Erhebungswelle
+## Variables
+# ID_t	person ID
+# wave	measurement wave
 
-## AV: Studienabbruchgedanken
-# Item: tg53221	oft an Studienabbruch gedacht	1 (gar nicht) - 4 (v?llig)
-# Item: tg53222	Wenn ich nochmals w?hlen k?nnte, w?rde ich mich f?r ein anderes 
-#       Studienfachentscheiden.	1 (gar nicht) - 4 (v?llig)
-# Item: tg53223 ernsthafter Gedanke an Studienabbruch mit	1 (gar nicht) - 4 (v?llig)
+## AV: dropout intention
+# Item: tg53221	I've often thought about dropping out: 1 (does not apply at all) - 4 (applies completely)
+# Item: tg53222	If I could choose again, I would opt for another field of study: 1 (does not apply at all) - 4 (applies completely)
+# Item: tg53223 I am seriously thinking of completely abandoning the studies: 1 (does not apply at all) - 4 (applies completely)
 
 ## Potentielle Subgruppen-Merkmale
-# Item: t700001	Geschlecht	1=m 2=w
-# tx29003	Muttersprache: deutsch	1=ja, 2=nein
-# tx29060	Momentan Berufst?tig	0=nein, 1=ja
-# t242001	Nutzung eines Beratungsangebots	1=genutzt, 2=nicht genutzt
-# Beratung zur Immatrikulation/Zulassung
-# tx29062 berufliche Stellung (aktuell)	Nominal, 9 Auspr?gungen
+# Item: t700001	gender	1=m 2=f
+# tx29003   first language German:  1=yes, 2=no
+# tx29060	currently employed:     0=no, 1=yes
+# t242001	used counselling:       1=used, 2=not used
+# counselling on admission/enrollment
+# tx29062   job position (current)	nominal, 9 levels
 
-d <- readRDS("../data/SC5_SubgroupSEM.rds")
+d <- readRDS("SC5_SubgroupSEM.rds")
 d <- subset(d,
             subset=wave %in% c(2,4,6,8),
             select=c(ID_t,wave,
@@ -33,32 +32,32 @@ d <- subset(d,
                      t731351_g1, t731301_g1
                      ))
 names(d) <- c("id", "wave", 
-              "abbruch1", "abbruch2", "abbruch3", 
-              "geburtsjahr", "gender", 
-              "bildung_vater", "bildung_mutter")
+              "dropout1", "dropout2", "dropout3", 
+              "yearofbirth", "gender", 
+              "education_father", "education_mother")
 
 d <- within(d, {
-  geburtsjahr <- as.numeric(geburtsjahr)
+  yearofbirth <- as.numeric(yearofbirth)
   gender <- as.factor(gender)
-  bildung_vater <- as.factor(bildung_vater)
-  bildung_mutter <- as.factor(bildung_mutter)
+  education_father <- as.factor(education_father)
+  education_mother <- as.factor(education_mother)
 })
 summary(d)
 
 ## wide data format
 dwide <- reshape(d,
-                 v.names=c("abbruch1", "abbruch2", "abbruch3"),
+                 v.names=c("dropout1", "dropout2", "dropout3"),
                  timevar="wave",
                  idvar="id",
                  direction="wide")
 summary(dwide)
 
 ## RIASEC is only measured at wave 1
-d <- readRDS("../data/SC5_SubgroupSEM.rds")
+d <- readRDS("SC5_SubgroupSEM.rds")
 dinterest <- subset(d,
                     subset=wave==1,
                     select=c(ID_t,t66207a_g1, t66207b_g1, t66207c_g1, t66207d_g1, t66207e_g1, t66207f_g1, tg02001))
-names(dinterest) <- c("id", "R", "I", "A", "S", "E", "C", "ang_abschluss")
+    names(dinterest) <- c("id", "R", "I", "A", "S", "E", "C", "qualification")
 
 dinterest <- within(dinterest, {
   R <- as.numeric(R)
@@ -67,7 +66,7 @@ dinterest <- within(dinterest, {
   S <- as.numeric(S)
   E <- as.numeric(E)
   C <- as.numeric(C)
-  ang_abschluss <- as.factor(ang_abschluss)
+  qualification <- as.factor(qualification)
 })
 
 #rm(d)
@@ -78,7 +77,7 @@ head(dwide)
 
 # reliability
 library(psych)
-dAbbruch <- data.frame(d$abbruch1, d$abbruch2, d$abbruch3)
+dAbbruch <- data.frame(d$dropout1, d$dropout2, d$dropout3)
 omegah(dAbbruch)
 
 
@@ -90,44 +89,44 @@ summary(dwide)
 dwide$subg <- as.numeric(dwide$gender==1)
 
 model <- '
-eta1 =~ 1*abbruch1.2 + c(la2,la2)*abbruch2.2 + c(la3,la3)*abbruch3.2
-eta2 =~ 1*abbruch1.4 + c(la2,la2)*abbruch2.4 + c(la3,la3)*abbruch3.4
-eta3 =~ 1*abbruch1.6 + c(la2,la2)*abbruch2.6 + c(la3,la3)*abbruch3.6
-eta4 =~ 1*abbruch1.8 + c(la2,la2)*abbruch2.8 + c(la3,la3)*abbruch3.8
+eta1 =~ 1*dropout1.2 + c(la2,la2)*dropout2.2 + c(la3,la3)*dropout3.2
+eta2 =~ 1*dropout1.4 + c(la2,la2)*dropout2.4 + c(la3,la3)*dropout3.4
+eta3 =~ 1*dropout1.6 + c(la2,la2)*dropout2.6 + c(la3,la3)*dropout3.6
+eta4 =~ 1*dropout1.8 + c(la2,la2)*dropout2.8 + c(la3,la3)*dropout3.8
 
 eta1 ~ c(m11,m12)*1
 eta2 ~ c(m21,m22)*1
 eta3 ~ c(m31,m32)*1
 eta4 ~ c(m41,m42)*1
 
-abbruch1.2 ~ 0*1
-abbruch1.4 ~ 0*1
-abbruch1.6 ~ 0*1
-abbruch1.8 ~ 0*1
+dropout1.2 ~ 0*1
+dropout1.4 ~ 0*1
+dropout1.6 ~ 0*1
+dropout1.8 ~ 0*1
 
-abbruch2.2 ~ c(nu2,nu2)*1
-abbruch2.4 ~ c(nu2,nu2)*1
-abbruch2.6 ~ c(nu2,nu2)*1
-abbruch2.8 ~ c(nu2,nu2)*1
+dropout2.2 ~ c(nu2,nu2)*1
+dropout2.4 ~ c(nu2,nu2)*1
+dropout2.6 ~ c(nu2,nu2)*1
+dropout2.8 ~ c(nu2,nu2)*1
 
-abbruch3.2 ~ c(nu3,nu3)*1
-abbruch3.4 ~ c(nu3,nu3)*1
-abbruch3.6 ~ c(nu3,nu3)*1
-abbruch3.8 ~ c(nu3,nu3)*1
+dropout3.2 ~ c(nu3,nu3)*1
+dropout3.4 ~ c(nu3,nu3)*1
+dropout3.6 ~ c(nu3,nu3)*1
+dropout3.8 ~ c(nu3,nu3)*1
 
 
-MF1 =~ abbruch2.2 + 1*abbruch2.4 + 1*abbruch2.6 + 1*abbruch2.8
-MF2 =~ abbruch3.2 + 1*abbruch3.4 + 1*abbruch3.6 + 1*abbruch3.8
+MF1 =~ dropout2.2 + 1*dropout2.4 + 1*dropout2.6 + 1*dropout2.8
+MF2 =~ dropout3.2 + 1*dropout3.4 + 1*dropout3.6 + 1*dropout3.8
 
 eta1 + eta2 + eta3 + eta4 ~~ 0*MF1 + 0*MF2
 MF1 ~~ 0*MF2 
 '
 
 model2 <- '
-eta1 =~ 1*abbruch1.2 + c(la2,la2)*abbruch2.2 + c(la3,la3)*abbruch3.2
-eta2 =~ 1*abbruch1.4 + c(la2,la2)*abbruch2.4 + c(la3,la3)*abbruch3.4
-eta3 =~ 1*abbruch1.6 + c(la2,la2)*abbruch2.6 + c(la3,la3)*abbruch3.6
-eta4 =~ 1*abbruch1.8 + c(la2,la2)*abbruch2.8 + c(la3,la3)*abbruch3.8
+eta1 =~ 1*dropout1.2 + c(la2,la2)*dropout2.2 + c(la3,la3)*dropout3.2
+eta2 =~ 1*dropout1.4 + c(la2,la2)*dropout2.4 + c(la3,la3)*dropout3.4
+eta3 =~ 1*dropout1.6 + c(la2,la2)*dropout2.6 + c(la3,la3)*dropout3.6
+eta4 =~ 1*dropout1.8 + c(la2,la2)*dropout2.8 + c(la3,la3)*dropout3.8
 
 pi1 =~ 1.00*eta1 + 1.00*eta2 + 1.00*eta3 + 1.00*eta4
 pi2 =~ 0.00*eta1 + -0.5*eta2 + -0.5*eta3 + 1.00*eta4
@@ -145,23 +144,23 @@ pi2 ~ c(m21,m22)*1
 pi3 ~ c(m31,m32)*1
 pi4 ~ c(m41,m42)*1
 
-abbruch1.2 ~ 0*1
-abbruch1.4 ~ 0*1
-abbruch1.6 ~ 0*1
-abbruch1.8 ~ 0*1
+dropout1.2 ~ 0*1
+dropout1.4 ~ 0*1
+dropout1.6 ~ 0*1
+dropout1.8 ~ 0*1
 
-abbruch2.2 ~ c(nu2,nu2)*1
-abbruch2.4 ~ c(nu2,nu2)*1
-abbruch2.6 ~ c(nu2,nu2)*1
-abbruch2.8 ~ c(nu2,nu2)*1
+dropout2.2 ~ c(nu2,nu2)*1
+dropout2.4 ~ c(nu2,nu2)*1
+dropout2.6 ~ c(nu2,nu2)*1
+dropout2.8 ~ c(nu2,nu2)*1
 
-abbruch3.2 ~ c(nu3,nu3)*1
-abbruch3.4 ~ c(nu3,nu3)*1
-abbruch3.6 ~ c(nu3,nu3)*1
-abbruch3.8 ~ c(nu3,nu3)*1
+dropout3.2 ~ c(nu3,nu3)*1
+dropout3.4 ~ c(nu3,nu3)*1
+dropout3.6 ~ c(nu3,nu3)*1
+dropout3.8 ~ c(nu3,nu3)*1
 
-MF1 =~ abbruch2.2 + 1*abbruch2.4 + 1*abbruch2.6 + 1*abbruch2.8
-MF2 =~ abbruch3.2 + 1*abbruch3.4 + 1*abbruch3.6 + 1*abbruch3.8
+MF1 =~ dropout2.2 + 1*dropout2.4 + 1*dropout2.6 + 1*dropout2.8
+MF2 =~ dropout3.2 + 1*dropout3.4 + 1*dropout3.6 + 1*dropout3.8
 
 eta1 + eta2 + eta3 + eta4 ~~ 0*MF1 + 0*MF2
 pi1 + pi2 + pi3 + pi4 ~~ 0*MF1 + 0*MF2
@@ -195,12 +194,12 @@ wald
 
 ####### subroupsem model #############
 
-#columns <- c("geburtsjahr", "gender",   
-#             "bildung_vater", "bildung_mutter", "ang_abschluss", 
+#columns <- c("yearofbirth", "gender",   
+#             "education_father", "education_mother", "qualification", 
 #             "R", "I", "A", "S", "E", "C")
 
-columns <- c("geburtsjahr", "gender",
-             "bildung_vater", "bildung_mutter", "ang_abschluss")
+columns <- c("yearofbirth", "gender",
+             "education_father", "education_mother", "qualification")
 
 
 #dwide_omit <- dwide[complete.cases(dwide[,columns]),]
@@ -215,10 +214,10 @@ solve(C) %>% t()
 
 
 model <- '
-eta1 =~ 1*abbruch1.2 + c(la2,la2)*abbruch2.2 + c(la3,la3)*abbruch3.2
-eta2 =~ 1*abbruch1.4 + c(la2,la2)*abbruch2.4 + c(la3,la3)*abbruch3.4
-eta3 =~ 1*abbruch1.6 + c(la2,la2)*abbruch2.6 + c(la3,la3)*abbruch3.6
-eta4 =~ 1*abbruch1.8 + c(la2,la2)*abbruch2.8 + c(la3,la3)*abbruch3.8
+eta1 =~ 1*dropout1.2 + c(la2,la2)*dropout2.2 + c(la3,la3)*dropout3.2
+eta2 =~ 1*dropout1.4 + c(la2,la2)*dropout2.4 + c(la3,la3)*dropout3.4
+eta3 =~ 1*dropout1.6 + c(la2,la2)*dropout2.6 + c(la3,la3)*dropout3.6
+eta4 =~ 1*dropout1.8 + c(la2,la2)*dropout2.8 + c(la3,la3)*dropout3.8
 
 pi1 =~ 1.00*eta1 + 1.00*eta2 + 1.00*eta3 + 1.00*eta4
 pi2 =~ 0.00*eta1 + -0.5*eta2 + -0.5*eta3 + 1.00*eta4
@@ -236,23 +235,23 @@ pi2 ~ c(m21,m22)*1
 pi3 ~ c(m31,m32)*1
 pi4 ~ c(m41,m42)*1
 
-abbruch1.2 ~ 0*1
-abbruch1.4 ~ 0*1
-abbruch1.6 ~ 0*1
-abbruch1.8 ~ 0*1
+dropout1.2 ~ 0*1
+dropout1.4 ~ 0*1
+dropout1.6 ~ 0*1
+dropout1.8 ~ 0*1
 
-abbruch2.2 ~ c(nu2,nu2)*1
-abbruch2.4 ~ c(nu2,nu2)*1
-abbruch2.6 ~ c(nu2,nu2)*1
-abbruch2.8 ~ c(nu2,nu2)*1
+dropout2.2 ~ c(nu2,nu2)*1
+dropout2.4 ~ c(nu2,nu2)*1
+dropout2.6 ~ c(nu2,nu2)*1
+dropout2.8 ~ c(nu2,nu2)*1
 
-abbruch3.2 ~ c(nu3,nu3)*1
-abbruch3.4 ~ c(nu3,nu3)*1
-abbruch3.6 ~ c(nu3,nu3)*1
-abbruch3.8 ~ c(nu3,nu3)*1
+dropout3.2 ~ c(nu3,nu3)*1
+dropout3.4 ~ c(nu3,nu3)*1
+dropout3.6 ~ c(nu3,nu3)*1
+dropout3.8 ~ c(nu3,nu3)*1
 
-MF1 =~ abbruch2.2 + 1*abbruch2.4 + 1*abbruch2.6 + 1*abbruch2.8
-MF2 =~ abbruch3.2 + 1*abbruch3.4 + 1*abbruch3.6 + 1*abbruch3.8
+MF1 =~ dropout2.2 + 1*dropout2.4 + 1*dropout2.6 + 1*dropout2.8
+MF2 =~ dropout3.2 + 1*dropout3.4 + 1*dropout3.6 + 1*dropout3.8
 
 eta1 + eta2 + eta3 + eta4 ~~ 0*MF1 + 0*MF2
 pi1 + pi2 + pi3 + pi4 ~~ 0*MF1 + 0*MF2
@@ -319,15 +318,15 @@ task <- readRDS("resultsNEPS2.rds")
 saveRDS(dwide, "dwide.rds")
 
 
-# columns <- c("geburtsjahr", "gender",
-#              "bildung_vater", "bildung_mutter", "ang_abschluss")
+# columns <- c("yearofbirth", "gender",
+#              "education_father", "education_mother", "qualification")
 
 ## Post-analysis
 # select subgroup
 # get description and add selectors to NA selection
 
 task$subgroups$Subgroup5$description
-na_descriptors <- c("geburtsjahr", "bildung_mutter")
+na_descriptors <- c("yearofbirth", "education_mother")
 sg <- task$subgroups$Subgroup5$cases
 has_na <- sapply(columns, function(column) is.na(dwide[, column]))
 has_na_selectors <- apply(has_na[, na_descriptors, drop = F], 
