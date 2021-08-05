@@ -48,4 +48,4 @@ dPerson <- dBasics %>%
 
 ## merge and write
 d <- merge(dVS, dPerson, by = "ID_t")
-saveRDS("SC5_SubgroupSEM.rds")
+saveRDS(d, "SC5_SubgroupSEM.rds")
